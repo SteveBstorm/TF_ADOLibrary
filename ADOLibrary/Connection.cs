@@ -26,7 +26,24 @@ namespace ADOLibrary
          SqlCommand
          */
 
-        private SqlConnection createConnection()
+        public IEnumerable<TEntity> ExecuteReader<TEntity>(Command cmd, Func<TEntity, SqlDataReader> convert)
+        {
+
+        }
+
+        // connection.ExectureReader<Contact>(cmd, Conversion);
+
+        // public Contact Conversion(SqlDataReader reader) {
+        //  return new Contact
+        //{
+        //    Id = (int) reader["Id"],
+        //    FirstName = reader["FirstName"].ToString(),
+        //    LastName = reader["LastName"].ToString(),
+        //    Email = reader["Email"].ToString()
+        //};
+    // }
+
+    private SqlConnection createConnection()
         {
             SqlConnection connection = new SqlConnection(_connectionString);
             return connection;
