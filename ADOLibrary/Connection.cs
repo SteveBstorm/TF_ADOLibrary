@@ -16,34 +16,51 @@ namespace ADOLibrary
             _connectionString = connectionString;
         }
 
-        /*
-         ExecuteScalar() => return une valeur
-         ExecuteNonQuery() => return le nombre de row affectée
-         ExecuteReader() => return un jeu d'enregistrement / minimum 1 voir un tableau d'enregistrement
-
-         SqlConnection
-
-         SqlCommand
-         */
-
-        public IEnumerable<TEntity> ExecuteReader<TEntity>(Command cmd, Func<TEntity, SqlDataReader> convert)
+        public IEnumerable<TEntity> ExecuteReader<TEntity>(Command cmd, Func<SqlDataReader, TEntity> convert)
         {
-
+            using(SqlConnection c = createConnection())
+            {
+                using(SqlCommand command = createCommand(cmd, c))
+                {
+                    c.Open();
+                    using(SqlDataReader dataReader = command.ExecuteReader())
+                    {
+                        while (dataReader.Read())
+                        {
+                            yield return convert(dataReader);
+                        }
+                    }
+                }
+            }
         }
 
-        // connection.ExectureReader<Contact>(cmd, Conversion);
+        public object ExecuteScalar(Command cmd)
+        {
+            using(SqlConnection c = createConnection())
+            {
+                using (SqlCommand command = createCommand(cmd, c))
+                {
+                    c.Open();
+                    object O = command.ExecuteScalar();
+                    return (O is DBNull) ? null : O; 
+                }
+            }
+        }
 
-        // public Contact Conversion(SqlDataReader reader) {
-        //  return new Contact
-        //{
-        //    Id = (int) reader["Id"],
-        //    FirstName = reader["FirstName"].ToString(),
-        //    LastName = reader["LastName"].ToString(),
-        //    Email = reader["Email"].ToString()
-        //};
-    // }
+        public int ExecuteNonQuery(Command cmd)
+        {
+            using (SqlConnection c = createConnection())
+            {
+                using (SqlCommand command = createCommand(cmd, c))
+                {
+                    c.Open();
+                    return command.ExecuteNonQuery();  
+                }
+            }
+        }
 
-    private SqlConnection createConnection()
+
+        private SqlConnection createConnection()
         {
             SqlConnection connection = new SqlConnection(_connectionString);
             return connection;
@@ -54,7 +71,7 @@ namespace ADOLibrary
             SqlCommand sqlCmd = connection.CreateCommand();
             sqlCmd.CommandText = cmd._query;
             sqlCmd.CommandType = cmd._isStoredProcedure ? System.Data.CommandType.StoredProcedure : System.Data.CommandType.Text;
-            if(!(cmd._parameters is null))
+            if (!(cmd._parameters is null))
             {
                 foreach (KeyValuePair<string, object> param in cmd._parameters)
                 {
